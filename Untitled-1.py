@@ -25,19 +25,44 @@ def checkfirewall_status():
         return "\n".join([f"{profile} Firewall: {status}" for profile, status in library.items()])
     except Exception as e:
         return f"Error checking firewall status: {e}"
+    
+    
+def check_windows_defender():
+    try:
+        cmd = [
+            "powershell",
+            "-Command",
+            "Get-Service -Name WinDefend | Select-Object -ExpandProperty Status"
+        ]
+        #cmd = 'powershell -Command"Get-Service -Name WinDefend | Select-Object -ExpandProperty Status"'
+        output = subprocess.check_output(cmd, shell=True, text=True).strip()
+
+        if output:
+            return f"windows defender is :{output.upper()}"
+        else:
+            return "windows defender has no status"
+    except subprocess.CalledProcessError:
+        return "Windows defender could not be found"
+    except Exception as e:
+        return f"Error checking Windows Defender Status: {e}"
+
+
+
+
+
+
+
 
 
 
 
 if __name__ == "__main__":
-    print("welcome to the security tool")
-    print("firewall status:")
+    print("=== Welcome to the security tool ===\n")
+    print("== firewall status: == \n ")
     print(checkfirewall_status())
-
-
-
-
-
+    print("\n ~~~ windows defender status is: ~~~\n")
+    print(check_windows_defender())
+    print("\n")
 
 
 
