@@ -1,6 +1,7 @@
 import os
 import subprocess
 import re
+import winreg
 #netsh advfirewall show allprofiles
 def checkfirewall_status():
     try:
@@ -46,14 +47,38 @@ def check_windows_defender():
     except Exception as e:
         return f"Error checking Windows Defender Status: {e}"
 
+def regedit_check():
+    entries = []
 
 
+    def read_registry_entries(root,path,scope_label):
+        try:
+            with winreg.OpenKey(root,path) as key:
+                i = 0
+                while True:
+                    try:
+                        name, value, _ = winreg.EnumValue(key, i)
+                        entries.append(f"[{scope_label}] {name} -> {value}")
+                        i += 1
+                    except OSError:
+                        break
+        except FileNotFoundError:
+            entries.append(f"[{scope_label} registry path not found")
+        except Exception as e:
+            entries.append(f"[{scope_label} {e}")
+    
+    read_registry_entries(
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Microsoft\Windows\CurrentVersion\Run",
+        "CurrentUser"
+    )
+    read_registry_entries(
+        winreg.HKEY_LOCAL_MACHINE,
+        r"Software\Microsoft\Windows\CurrentVersion\Run",
+        "LocalMachine"
+    )
 
-
-
-
-
-
+    return "\n".join(entries) if entries else "No registry entries found"
 
 
 if __name__ == "__main__":
@@ -63,7 +88,9 @@ if __name__ == "__main__":
     print("\n ~~~ windows defender status is: ~~~\n")
     print(check_windows_defender())
     print("\n")
-
+    print("/////startup applications://///")
+    print(regedit_check())
+    print("\n")
 
 
 
