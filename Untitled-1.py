@@ -1,7 +1,13 @@
 import os
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 import re
 import winreg
+import ipaddress
+import socket
+
+
+
 #netsh advfirewall show allprofiles
 def checkfirewall_status():
     try:
@@ -103,8 +109,65 @@ def regedit_check():
     )
 
     return "\n".join(entries) if entries else "No registry entries found"
+def get_local_ip():
+    try:
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        return f"Local IP Address: {local_ip}"
+    except socket.error as e:
+        return f"Error getting local IP address: {e}"
+    
+def ping_ip(ip):
+    try:
+        #pings once
+        command = subprocess.check_output(["ping", "-n", "1","w","500",str(ip)])
+        result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)     
+        return str(ip) if result.returncode == 0 else None           
+    except Exception:
+        return None
+     
+def scan_network(subnet="auto"):
+    # local_ip = get_local_ip()
+    # if not local_ip:
+    #     return "Could not determine local IP address."
+    try:
+        if subnet == "auto":
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+            base_net = ipaddress.ip_network(local_ip + "/24", strict=False)
+        else:
+            base_net = ipaddress.ip_network(subnet, strict=False)
+    
+        print(f"Scanning network: {base_net}")
+        live_hosts = []
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            results = executor.map(ping_ip, base_net.hosts())
+            for result in results:
+                if result:
+                    live_hosts.append(result)
 
+        return "active devices on the network:\n" + "\n".join(live_hosts) if live_hosts else "No active devices found on the network."
+    except Exception as e:
+        return f"Error scanning network: {e}"
+    
 
+def scan_arp_table():
+    try:
+        output = subprocess.check_output("arp -a", shell=True, text=True)
+        lines = output.splitlines()
+        devices = []
+    
+        for line in lines:
+            if "-" in line and "dynamic" in line.lower():
+                parts = line.split()
+                if len(parts) >= 2:
+                    ip_address = parts[0]
+                    mac_address = parts[1]
+                    devices.append(f"IP: {ip_address}, MAC: {mac_address}")
+        return "devices found via the arp table \n".join(devices) if devices else "No devices found in ARP table."
+    except Exception as e:
+        return f"Error scanning ARP table: {e}"
+    
 if __name__ == "__main__":
     print("\n           Welcome to the security tool          \n")
     print("--firewall status:  ")
@@ -123,7 +186,11 @@ if __name__ == "__main__":
     print("\n" + regedit_check() + "\n")
     print("=================================================================================================================================")
     print("\n")
-
+    print("starting network scan, do not turn of your computer, or the computer will not be able to scan your information")
+    print("\n")
+    print("its all good dude, kidding. these are the devices on your network:")
+    print("\n" +  scan_arp_table()  + "\n")
+    print("ping version: \n" + scan_network() + "\n")
 
 
 
