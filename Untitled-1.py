@@ -167,6 +167,41 @@ def scan_arp_table():
         return "devices found via the arp table \n".join(devices) if devices else "No devices found in ARP table."
     except Exception as e:
         return f"Error scanning ARP table: {e}"
+def listofusers():
+    try:
+        cmd1= [
+            "powershell",
+            "-Command",
+            "Get-LocalUser | Select-Object -Property Name, Enabled, LastLogon, description | Format-Table -AutoSize"
+            ]
+        output = subprocess.check_output(cmd1, shell=True, text=True).strip()
+        if output:
+            users = output.splitlines()
+            return "Users on the system:\n" + "\n".join(users)
+        else:
+            return "no users found"
+    except subprocess.CalledProcessError:
+        return "failed to access user list"
+    except Exception as e:
+        return f"Error checking users: {e}"
+    
+def corrupt_check():
+    user_input = input("Wold you like to run a System File Check? (y/n)")
+    if user_input != "y":
+        return "System File Check not initiated."
+    print("Running System File Check... this may take a while.")
+    try:
+        result = subprocess.run({
+            "sfc",
+            "/scannow"
+        }, check=True, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            return "System File Check completed successfully. No corrupted files found." + result.stdout
+        else:
+            return "System File Check completed. (exit code: {result.returncode}):\n{ result.stdout or result.stderr}"
+    except Exception as e:
+        return f"Error running System File Check: {e}"
     
 if __name__ == "__main__":
     print("\n           Welcome to the security tool          \n")
@@ -191,88 +226,13 @@ if __name__ == "__main__":
     print("its all good dude, kidding. these are the devices on your network:")
     print("\n" +  scan_arp_table()  + "\n")
     print("ping version: \n" + scan_network() + "\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    print("=================================================================================================================================")
+    print("\n")
+    print("your local ip address is: \n" + get_local_ip() + "\n")
+    print("=================================================================================================================================")
+    print("\n")
+    print("the users on your system are: \n" + listofusers() + "\n")
+    print("=================================================================================================================================")
+    print("\n")
+    print(corrupt_check())
+    print("thank you for using the security tool, have a nice day!")
