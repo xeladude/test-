@@ -6,10 +6,11 @@
     # Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
     # #Computer\HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run
 
-4. list all installed by size going largest to lowest
-
-5. if firewall is down, ask prompt to turn on firewall.
--- Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+4. if firewall is down, ask prompt to turn on firewall. Works, confirmed.
 
 
-Next Class, we will get the startup apps from the regedit directory. We need both paths.
+5. list devices on internet. works 
+
+6. lists users on device. works
+
+* run cmd python c:/Users/cente/Desktop/test-/Untitled-1.py

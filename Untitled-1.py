@@ -190,11 +190,14 @@ def corrupt_check():
     if user_input != "y":
         return "System File Check not initiated."
     print("Running System File Check... this may take a while.")
+
     try:
-        result = subprocess.run({
+        result = subprocess.run([
+            "cmd.exe",
+            "/c",
             "sfc",
             "/scannow"
-        }, check=True, capture_output=True, text=True)
+        ], check=True, capture_output=True, shell=False, text=True)
 
         if result.returncode == 0:
             return "System File Check completed successfully. No corrupted files found." + result.stdout
@@ -225,7 +228,7 @@ if __name__ == "__main__":
     print("\n")
     print("its all good dude, kidding. these are the devices on your network:")
     print("\n" +  scan_arp_table()  + "\n")
-    print("ping version: \n" + scan_network() + "\n")
+    #print("ping version: \n" + scan_network() + "\n")
     print("=================================================================================================================================")
     print("\n")
     print("your local ip address is: \n" + get_local_ip() + "\n")
