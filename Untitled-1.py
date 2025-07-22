@@ -186,23 +186,42 @@ def listofusers():
         return f"Error checking users: {e}"
     
 def corrupt_check():
-    user_input = input("Wold you like to run a System File Check? (y/n)")
-    if user_input != "y":
+    user_input = input("Wold you like to run a System File Check? (y/n)").strip().lower()
+    if user_input not in ["y", "yes"]:
         return "System File Check not initiated."
     print("Running System File Check... this may take a while.")
 
     try:
-        result = subprocess.run([
+        with subprocess.Popen([
             "cmd.exe",
             "/c",
             "sfc",
             "/scannow"
-        ], check=True, capture_output=True, shell=False, text=True)
+        ], 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT, 
+        text=True, 
+        bufsize=1, 
+        universal_newlines=True
+    ) as process:
+            show_chunks = set()
 
-        if result.returncode == 0:
-            return "System File Check completed successfully. No corrupted files found." + result.stdout
-        else:
-            return "System File Check completed. (exit code: {result.returncode}):\n{ result.stdout or result.stderr}"
+            for line in process.stdout:
+                line = line.strip()
+
+                match = re.search(r"Verification\s+(\d+)%\s+complete", line)
+
+                if match:
+                    percent = int(match.group(1))
+
+                    for threshold in [0, 25, 50, 75, 100]:
+                        if percent >= threshold and threshold not in show_chunks:
+                            print(f"{threshold}% completed.")
+                            show_chunks.add(threshold)
+                elif "Windows Resource Protection" in line:
+                    print(f"\n Result: {line}")
+
+        return "\n System file check completed."
     except Exception as e:
         return f"Error running System File Check: {e}"
     
@@ -238,4 +257,8 @@ if __name__ == "__main__":
     print("=================================================================================================================================")
     print("\n")
     print(corrupt_check())
-    print("thank you for using the security tool, have a nice day!")
+    print("\n")
+    print("=================================================================================================================================")
+    print("\n")
+    print("😎 thank you for using the security tool, have a nice day! 😎"
+          "\n")
